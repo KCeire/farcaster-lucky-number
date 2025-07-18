@@ -7,14 +7,14 @@ const inter = Inter({ subsets: ['latin'] })
 // Farcaster Mini App embed configuration
 const miniAppEmbed = {
   version: "1",
-  imageUrl: "https://be59deee7d02.ngrok-free.app/og-image.png",
+  imageUrl: "https://farcaster-lucky-number.vercel.app/og-image.png",
   button: {
     title: "🍀 Get My Lucky Number",
     action: {
       type: "launch_miniapp",
       name: "Lucky Numbers",
-      url: "https://be59deee7d02.ngrok-free.app",
-      splashImageUrl: "https://be59deee7d02.ngrok-free.app/splash.png",
+      url: "https://farcaster-lucky-number.vercel.app",
+      splashImageUrl: "https://farcaster-lucky-number.vercel.app/splash.png",
       splashBackgroundColor: "#8B5CF6"
     }
   }
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Lucky Numbers',
     description: 'Get your daily lucky number based on your Farcaster ID!',
-    images: ['https://be59deee7d02.ngrok-free.app/og-image.png'],
+    images: ['https://farcaster-lucky-number.vercel.app/og-image.png'],
   },
   other: {
     'fc:miniapp': JSON.stringify(miniAppEmbed),

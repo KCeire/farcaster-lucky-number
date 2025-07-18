@@ -2,11 +2,11 @@
   "miniapp": {
     "version": "1",
     "name": "Lucky Numbers",
-    "iconUrl": "https://be59deee7d02.ngrok-free.app/icon.png",
-    "homeUrl": "https://be59deee7d02.ngrok-free.app",
-    "imageUrl": "https://be59deee7d02.ngrok-free.app/og-image.png",
+    "iconUrl": "https://farcaster-lucky-number.vercel.app/icon.png",
+    "homeUrl": "https://farcaster-lucky-number.vercel.app",
+    "imageUrl": "https://farcaster-lucky-number.vercel.app/og-image.png",
     "buttonTitle": "🍀 Get My Lucky Number",
-    "splashImageUrl": "https://be59deee7d02.ngrok-free.app/splash.png",
+    "splashImageUrl": "https://farcaster-lucky-number.vercel.app/splash.png",
     "splashBackgroundColor": "#8B5CF6",
     "description": "Get your daily lucky number based on your Farcaster ID!"
   }
