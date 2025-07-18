@@ -28,7 +28,7 @@ export const metadata: Metadata = {
       button: {
         title: "🍀 Get My Lucky Number",
         action: {
-          type: "launch_miniapp",
+          type: "launch_frame",
           name: "Lucky Numbers",
           url: "https://farcaster-lucky-number.vercel.app",
           splashImageUrl: "https://farcaster-lucky-number.vercel.app/splash.png",
