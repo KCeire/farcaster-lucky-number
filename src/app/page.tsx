@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     description: 'Generate your daily lucky number and share it with friends!',
     images: [
       {
-        url: '/og-image.png', // Make sure you have this image in your public folder
+        url: '/og-image.png', 
         width: 1200,
         height: 630,
         alt: 'Lucky Numbers App',
@@ -22,14 +22,13 @@ export const metadata: Metadata = {
     ],
   },
   other: {
-    // Farcaster Frame metadata - this is the key part you were missing!
     'fc:frame': 'vNext',
     'fc:frame:image': process.env.NEXT_PUBLIC_URL 
       ? `${process.env.NEXT_PUBLIC_URL}/og-image.png`
-      : 'https://your-domain.com/og-image.png', // Replace with your actual domain
+      : 'https://farcaster-lucky-number.vercel.app/og-image.png', 
     'fc:frame:button:1': '🍀 Get My Lucky Number',
     'fc:frame:button:1:action': 'link',
-    'fc:frame:button:1:target': process.env.NEXT_PUBLIC_URL || 'https://your-domain.com', // Replace with your actual domain
+    'fc:frame:button:1:target': process.env.NEXT_PUBLIC_URL || 'https://farcaster-lucky-number.vercel.app/', 
     'fc:frame:image:aspect_ratio': '1.91:1',
   },
 }
@@ -41,7 +40,7 @@ interface User {
   pfpUrl?: string
 }
 
-type SDKType = 'farcaster' | 'minikit' | 'demo'
+type SDKType = 'farcaster' | 'coinbase' | 'demo'
 
 function LuckyNumberAppContent() {
   const [user, setUser] = useState<User | null>(null)
@@ -85,27 +84,27 @@ function LuckyNumberAppContent() {
     }, 800)
   }
 
+  // Enhanced sharing function using official SDK for all clients
   const handleShare = async () => {
     if (!luckyNumber || !user) return
 
     try {
-      if (sdkType === 'farcaster') {
-        // Use Farcaster SDK
-        const { sdk } = await import('@farcaster/miniapp-sdk')
-        await sdk.actions.composeCast({
-          text: `🍀 My lucky number today is ${luckyNumber}! What's yours?`,
-          embeds: [window.location.href]
-        })
-      } else if (sdkType === 'minikit') {
-        // Use MiniKit functionality
-        console.log('MiniKit sharing - to be implemented with OnchainKit')
-        setError('MiniKit sharing coming soon!')
-      } else {
-        setError('Sharing is only available in Farcaster or Coinbase Wallet')
-      }
+      // Use the official SDK for all clients (recommended by Coinbase Wallet)
+      const { sdk } = await import('@farcaster/miniapp-sdk')
+      await sdk.actions.composeCast({
+        text: `🍀 My lucky number today is ${luckyNumber}! What's yours?`,
+        embeds: [window.location.href]
+      })
+      addDebugLog('Share cast composed successfully')
     } catch (error) {
       console.error('Error sharing:', error)
-      setError('Error sharing your lucky number')
+      if (error instanceof Error && error.name === 'RejectedByUser') {
+        setError('Sharing was cancelled')
+        addDebugLog('Share cancelled by user')
+      } else {
+        setError('Error sharing your lucky number')
+        addDebugLog(`Share error: ${error instanceof Error ? error.message : String(error)}`)
+      }
     }
   }
 
@@ -119,6 +118,13 @@ function LuckyNumberAppContent() {
       
       const context = await sdk.context
       addDebugLog(`Context received: ${JSON.stringify(context?.user ? 'User found' : 'No user')}`)
+      addDebugLog(`Client FID: ${context?.client?.clientFid || 'unknown'}`)
+      
+      // Check if this is Coinbase Wallet
+      if (context?.client?.clientFid === 309857) {
+        addDebugLog('Coinbase Wallet detected - redirecting to Coinbase initialization')
+        return false // Let Coinbase Wallet handler take over
+      }
       
       if (context && context.user && context.user.fid) {
         addDebugLog(`Farcaster user FID: ${context.user.fid}`)
@@ -137,39 +143,51 @@ function LuckyNumberAppContent() {
     }
   }
 
-  const initializeMiniKit = async () => {
+  // Enhanced Coinbase Wallet initialization
+  const initializeCoinbaseWallet = async () => {
     try {
-      addDebugLog('Trying MiniKit detection...')
-      // Check if we're in Coinbase Wallet using official client FID detection
+      addDebugLog('Trying Coinbase Wallet detection...')
+      
       if (typeof window !== 'undefined') {
-        // Try to get Farcaster context first to check client FID
-        try {
-          const { sdk } = await import('@farcaster/miniapp-sdk')
-          const context = await sdk.context
+        const { sdk } = await import('@farcaster/miniapp-sdk')
+        const context = await sdk.context
+        
+        addDebugLog(`Client FID: ${context?.client?.clientFid || 'unknown'}`)
+        
+        // Coinbase Wallet specific detection (clientFid 309857)
+        if (context?.client?.clientFid === 309857) {
+          addDebugLog('Coinbase Wallet detected via clientFid 309857')
           
-          addDebugLog(`Client FID: ${context?.client?.clientFid || 'unknown'}`)
-          
-          // Coinbase Wallet returns clientFid 309857
-          if (context?.client?.clientFid === 309857) {
-            addDebugLog('Coinbase Wallet detected via clientFid 309857')
+          // Use context data for authentication (recommended by Coinbase Wallet)
+          if (context.user && context.user.fid) {
+            addDebugLog(`Coinbase Wallet user FID: ${context.user.fid}`)
+            setUser(context.user)
+            setLuckyNumber(generateLuckyNumber(context.user.fid))
+            setSdkType('coinbase')
             
-            // Use the actual user data from Coinbase Wallet context
-            if (context.user && context.user.fid) {
-              setUser(context.user)
-              setLuckyNumber(generateLuckyNumber(context.user.fid))
-              setSdkType('minikit')
-              addDebugLog('MiniKit user set, calling ready()')
-              await sdk.actions.ready()
-              return true
-            } else {
-              addDebugLog('Coinbase Wallet detected but no user data')
+            // Call ready() for Coinbase Wallet
+            await sdk.actions.ready()
+            addDebugLog('Coinbase Wallet ready() called')
+            return true
+          } else {
+            addDebugLog('Coinbase Wallet detected but no user data - creating guest session')
+            
+            // Create session based on available context (fallback for Coinbase Wallet)
+            const guestUser = { 
+              fid: Math.floor(Math.random() * 10000) + 900000, // Use high FID range for guests
+              username: 'coinbase-guest', 
+              displayName: 'Coinbase Wallet User' 
             }
+            setUser(guestUser)
+            setLuckyNumber(generateLuckyNumber(guestUser.fid))
+            setSdkType('coinbase')
+            await sdk.actions.ready()
+            addDebugLog('Coinbase Wallet guest session created')
+            return true
           }
-        } catch (sdkError) {
-          addDebugLog(`SDK context error: ${sdkError}`)
         }
-
-        // Fallback to user agent detection
+        
+        // Fallback user agent detection (keep your existing logic)
         const userAgent = navigator.userAgent
         addDebugLog(`User agent: ${userAgent}`)
         const isCoinbaseWallet = userAgent.includes('CoinbaseWallet') && 
@@ -177,23 +195,24 @@ function LuckyNumberAppContent() {
                                 !window.location.href.includes('farcaster')
 
         if (isCoinbaseWallet) {
-          addDebugLog('Coinbase Wallet detected via user agent')
+          addDebugLog('Coinbase Wallet detected via user agent (fallback)')
           
           const mockUser = { 
-            fid: Math.floor(Math.random() * 10000), 
+            fid: Math.floor(Math.random() * 10000) + 800000, // Different range for user agent detection
             username: 'coinbase-user', 
             displayName: 'Coinbase Wallet User' 
           }
           setUser(mockUser)
           setLuckyNumber(generateLuckyNumber(mockUser.fid))
-          setSdkType('minikit')
+          setSdkType('coinbase')
           return true
         }
       }
-      addDebugLog('No MiniKit environment detected')
+      
+      addDebugLog('No Coinbase Wallet environment detected')
       return false
     } catch (error) {
-      addDebugLog(`MiniKit error: ${error}`)
+      addDebugLog(`Coinbase Wallet error: ${error}`)
       return false
     }
   }
@@ -203,7 +222,7 @@ function LuckyNumberAppContent() {
       try {
         addDebugLog('Starting app initialization...')
         
-        // Try Farcaster first
+        // Try Farcaster first (but it will redirect to Coinbase if detected)
         const farcasterSuccess = await initializeFarcaster()
         if (farcasterSuccess) {
           addDebugLog('Farcaster initialization successful')
@@ -211,10 +230,10 @@ function LuckyNumberAppContent() {
           return
         }
 
-        // Try MiniKit detection
-        const minikitSuccess = await initializeMiniKit()
-        if (minikitSuccess) {
-          addDebugLog('MiniKit initialization successful')
+        // Try Coinbase Wallet detection
+        const coinbaseSuccess = await initializeCoinbaseWallet()
+        if (coinbaseSuccess) {
+          addDebugLog('Coinbase Wallet initialization successful')
           setIsLoading(false)
           return
         }
@@ -264,9 +283,13 @@ function LuckyNumberAppContent() {
           </div>
           <h1 className="text-3xl font-bold mb-2">🍀 Lucky Numbers</h1>
           <p className="text-purple-100">Your daily dose of fortune!</p>
-          {/* Debug info */}
+          {/* Enhanced debug info */}
           <p className="text-purple-200 text-xs mt-2">
-            Running via: {sdkType === 'farcaster' ? 'Farcaster' : sdkType === 'minikit' ? 'Coinbase Wallet' : 'Demo'}
+            Running via: {
+              sdkType === 'farcaster' ? 'Farcaster' : 
+              sdkType === 'coinbase' ? 'Coinbase Wallet' : 
+              'Demo'
+            }
           </p>
         </div>
 
@@ -374,4 +397,4 @@ export default function LuckyNumberApp() {
       <LuckyNumberAppContent />
     </MiniKitWrapper>
   )
-}
+} 
