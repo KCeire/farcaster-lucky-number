@@ -96,20 +96,24 @@ function LuckyNumberAppContent() {
 
   const initializeMiniKit = async () => {
     try {
-      // Check if we're in a MiniKit environment
-      // This would need to be implemented based on OnchainKit's detection methods
+      // Only check for MiniKit when NOT in Farcaster environment
       if (typeof window !== 'undefined') {
-        // Check for MiniKit-specific indicators
+        // First check if we're in a Farcaster iframe (exclude this case)
+        if (window.parent !== window || window.top !== window) {
+          // We're in an iframe, likely Farcaster - skip MiniKit detection
+          return false
+        }
+
+        // Check for MiniKit-specific indicators only in standalone environments
         const userAgent = navigator.userAgent
-        const isCoinbaseWallet = userAgent.includes('CoinbaseWallet') || 
-                                userAgent.includes('Coinbase') ||
-                                'coinbaseWalletExtension' in window
+        const isCoinbaseWallet = userAgent.includes('CoinbaseWallet') && 
+                                !userAgent.includes('Farcaster') &&
+                                !window.location.href.includes('farcaster')
 
         if (isCoinbaseWallet) {
           console.log('Coinbase Wallet environment detected')
           
           // Create a mock user for MiniKit environment
-          // In a real implementation, you'd get user data from MiniKit
           const mockUser = { 
             fid: Math.floor(Math.random() * 10000), 
             username: 'coinbase-user', 
