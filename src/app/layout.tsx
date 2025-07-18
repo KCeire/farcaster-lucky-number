@@ -36,6 +36,21 @@ export const metadata: Metadata = {
         }
       }
     }),
+    // Also add fc:miniapp for better compatibility
+    'fc:miniapp': JSON.stringify({
+      version: "1",
+      imageUrl: "https://farcaster-lucky-number.vercel.app/og-image.png",
+      button: {
+        title: "🍀 Get My Lucky Number",
+        action: {
+          type: "launch_frame",
+          name: "Lucky Numbers",
+          url: "https://farcaster-lucky-number.vercel.app",
+          splashImageUrl: "https://farcaster-lucky-number.vercel.app/splash.png",
+          splashBackgroundColor: "#6200EA"
+        }
+      }
+    }),
   },
 }
 
@@ -52,4 +67,4 @@ export default function RootLayout({
       <body className={inter.className}>{children}</body>
     </html>
   )
-} 
+}
