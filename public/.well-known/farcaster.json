@@ -4,13 +4,20 @@
     "version": "1",
     "iconUrl": "https://farcaster-lucky-number.vercel.app/icon.png",
     "homeUrl": "https://farcaster-lucky-number.vercel.app",
-    "imageUrl": "https://farcaster-lucky-number.vercel.app/embed-image.png",
+    "imageUrl": "https://farcaster-lucky-number.vercel.app/og-image.png",
     "splashImageUrl": "https://farcaster-lucky-number.vercel.app/splash.png",
     "splashBackgroundColor": "#6200EA",
     "webhookUrl": "https://farcaster-lucky-number.vercel.app/api/webhook",
     "subtitle": "Fun lucky number gen",
     "description": "Testing how easy it is to make a mini app",
-    "primaryCategory": "games"
+    "primaryCategory": "games",
+    "requiredCapabilities": [
+      "actions.ready",
+      "actions.composeCast"
+    ],
+    "requiredChains": [
+      "eip155:8453"
+    ]
   },
   "accountAssociation": {
     "header": "eyJmaWQiOjgyNTgzNiwidHlwZSI6ImF1dGgiLCJrZXkiOiIweEUzRTY0QTk1QUYyOTgyNzEyNUQ0M2Y0MDkxQTNiMWU3NjYxMWFGOUEifQ",
