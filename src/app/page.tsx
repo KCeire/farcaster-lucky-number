@@ -96,24 +96,38 @@ function LuckyNumberAppContent() {
 
   const initializeMiniKit = async () => {
     try {
-      // Only check for MiniKit when NOT in Farcaster environment
+      // Check if we're in Coinbase Wallet using official client FID detection
       if (typeof window !== 'undefined') {
-        // First check if we're in a Farcaster iframe (exclude this case)
-        if (window.parent !== window || window.top !== window) {
-          // We're in an iframe, likely Farcaster - skip MiniKit detection
-          return false
+        // Try to get Farcaster context first to check client FID
+        try {
+          const { sdk } = await import('@farcaster/miniapp-sdk')
+          const context = await sdk.context
+          
+          // Coinbase Wallet returns clientFid 309857
+          if (context?.client?.clientFid === 309857) {
+            console.log('Coinbase Wallet detected via clientFid')
+            
+            // Use the actual user data from Coinbase Wallet context
+            if (context.user && context.user.fid) {
+              setUser(context.user)
+              setLuckyNumber(generateLuckyNumber(context.user.fid))
+              setSdkType('minikit')
+              return true
+            }
+          }
+        } catch (sdkError) {
+          console.log('Farcaster SDK not available, trying other detection methods')
         }
 
-        // Check for MiniKit-specific indicators only in standalone environments
+        // Fallback to user agent detection
         const userAgent = navigator.userAgent
         const isCoinbaseWallet = userAgent.includes('CoinbaseWallet') && 
                                 !userAgent.includes('Farcaster') &&
                                 !window.location.href.includes('farcaster')
 
         if (isCoinbaseWallet) {
-          console.log('Coinbase Wallet environment detected')
+          console.log('Coinbase Wallet detected via user agent')
           
-          // Create a mock user for MiniKit environment
           const mockUser = { 
             fid: Math.floor(Math.random() * 10000), 
             username: 'coinbase-user', 
