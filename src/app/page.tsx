@@ -20,6 +20,13 @@ function LuckyNumberAppContent() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sdkType, setSdkType] = useState<SDKType>('demo')
+  const [debugLog, setDebugLog] = useState<string[]>([])
+
+  // Add debug logging that's visible on screen
+  const addDebugLog = (message: string) => {
+    console.log(message)
+    setDebugLog(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()}: ${message}`])
+  }
 
   // Generate lucky number based on FID and current date
   const generateLuckyNumber = (fid: number): number => {
@@ -74,28 +81,35 @@ function LuckyNumberAppContent() {
 
   const initializeFarcaster = async () => {
     try {
+      addDebugLog('Trying Farcaster SDK...')
       const { sdk } = await import('@farcaster/miniapp-sdk')
       
       // Wait for context to be available
       await new Promise(resolve => setTimeout(resolve, 100))
       
       const context = await sdk.context
+      addDebugLog(`Context received: ${JSON.stringify(context?.user ? 'User found' : 'No user')}`)
+      
       if (context && context.user && context.user.fid) {
+        addDebugLog(`Farcaster user FID: ${context.user.fid}`)
         setUser(context.user)
         setLuckyNumber(generateLuckyNumber(context.user.fid))
         setSdkType('farcaster')
         await sdk.actions.ready()
+        addDebugLog('Farcaster SDK ready() called')
         return true
       }
+      addDebugLog('No Farcaster user found')
       return false
     } catch (error) {
-      console.error('Farcaster SDK error:', error)
+      addDebugLog(`Farcaster SDK error: ${error}`)
       return false
     }
   }
 
   const initializeMiniKit = async () => {
     try {
+      addDebugLog('Trying MiniKit detection...')
       // Check if we're in Coinbase Wallet using official client FID detection
       if (typeof window !== 'undefined') {
         // Try to get Farcaster context first to check client FID
@@ -103,30 +117,37 @@ function LuckyNumberAppContent() {
           const { sdk } = await import('@farcaster/miniapp-sdk')
           const context = await sdk.context
           
+          addDebugLog(`Client FID: ${context?.client?.clientFid || 'unknown'}`)
+          
           // Coinbase Wallet returns clientFid 309857
           if (context?.client?.clientFid === 309857) {
-            console.log('Coinbase Wallet detected via clientFid')
+            addDebugLog('Coinbase Wallet detected via clientFid 309857')
             
             // Use the actual user data from Coinbase Wallet context
             if (context.user && context.user.fid) {
               setUser(context.user)
               setLuckyNumber(generateLuckyNumber(context.user.fid))
               setSdkType('minikit')
+              addDebugLog('MiniKit user set, calling ready()')
+              await sdk.actions.ready()
               return true
+            } else {
+              addDebugLog('Coinbase Wallet detected but no user data')
             }
           }
         } catch (sdkError) {
-          console.log('Farcaster SDK not available, trying other detection methods')
+          addDebugLog(`SDK context error: ${sdkError}`)
         }
 
         // Fallback to user agent detection
         const userAgent = navigator.userAgent
+        addDebugLog(`User agent: ${userAgent}`)
         const isCoinbaseWallet = userAgent.includes('CoinbaseWallet') && 
                                 !userAgent.includes('Farcaster') &&
                                 !window.location.href.includes('farcaster')
 
         if (isCoinbaseWallet) {
-          console.log('Coinbase Wallet detected via user agent')
+          addDebugLog('Coinbase Wallet detected via user agent')
           
           const mockUser = { 
             fid: Math.floor(Math.random() * 10000), 
@@ -139,9 +160,10 @@ function LuckyNumberAppContent() {
           return true
         }
       }
+      addDebugLog('No MiniKit environment detected')
       return false
     } catch (error) {
-      console.error('MiniKit detection error:', error)
+      addDebugLog(`MiniKit error: ${error}`)
       return false
     }
   }
@@ -149,9 +171,12 @@ function LuckyNumberAppContent() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        addDebugLog('Starting app initialization...')
+        
         // Try Farcaster first
         const farcasterSuccess = await initializeFarcaster()
         if (farcasterSuccess) {
+          addDebugLog('Farcaster initialization successful')
           setIsLoading(false)
           return
         }
@@ -159,18 +184,20 @@ function LuckyNumberAppContent() {
         // Try MiniKit detection
         const minikitSuccess = await initializeMiniKit()
         if (minikitSuccess) {
+          addDebugLog('MiniKit initialization successful')
           setIsLoading(false)
           return
         }
 
         // Fall back to demo user
+        addDebugLog('Falling back to demo user')
         const mockUser = { fid: 123, username: 'demo', displayName: 'Demo User' }
         setUser(mockUser)
         setLuckyNumber(generateLuckyNumber(mockUser.fid))
         setSdkType('demo')
         setIsLoading(false)
       } catch (error) {
-        console.error('Error initializing app:', error)
+        addDebugLog(`Initialization error: ${error}`)
         // Ultimate fallback
         const mockUser = { fid: 123, username: 'demo', displayName: 'Demo User' }
         setUser(mockUser)
@@ -185,8 +212,14 @@ function LuckyNumberAppContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-        <div className="text-white text-xl">Loading your lucky number...</div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-500 to-pink-500 flex flex-col items-center justify-center text-white p-4">
+        <div className="text-xl mb-4">Loading your lucky number...</div>
+        <div className="bg-black/20 p-4 rounded-lg max-w-md w-full">
+          <div className="text-sm text-yellow-200 mb-2">Debug Log:</div>
+          {debugLog.map((log, index) => (
+            <div key={index} className="text-xs text-gray-300 mb-1">{log}</div>
+          ))}
+        </div>
       </div>
     )
   }
@@ -205,6 +238,14 @@ function LuckyNumberAppContent() {
           <p className="text-purple-200 text-xs mt-2">
             Running via: {sdkType === 'farcaster' ? 'Farcaster' : sdkType === 'minikit' ? 'Coinbase Wallet' : 'Demo'}
           </p>
+        </div>
+
+        {/* Debug Panel */}
+        <div className="bg-black/20 p-3 rounded-lg mb-6">
+          <div className="text-yellow-200 text-xs mb-2">Latest Debug:</div>
+          {debugLog.slice(-3).map((log, index) => (
+            <div key={index} className="text-xs text-gray-300 mb-1">{log}</div>
+          ))}
         </div>
 
         {/* Error Display */}
