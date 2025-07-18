@@ -1,50 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Sparkles, RefreshCw, Share2 } from 'lucide-react'
+import Image from 'next/image'
 import MiniKitWrapper from './MiniKitWrapper'
-import { Metadata } from 'next'
-
-// Add this metadata export for Farcaster Frame support
-export const metadata: Metadata = {
-  title: '🍀 Lucky Numbers - Your Daily Fortune',
-  description: 'Generate your daily lucky number and share it with friends!',
-  openGraph: {
-    title: '🍀 Lucky Numbers - Your Daily Fortune',
-    description: 'Generate your daily lucky number and share it with friends!',
-    images: [
-      {
-        url: '/og-image.png', 
-        width: 1200,
-        height: 630,
-        alt: 'Lucky Numbers App',
-      },
-    ],
-  },
-  other: {
-    // Farcaster Frame metadata - this creates the embed
-    'fc:frame': JSON.stringify({
-      version: "1",
-      imageUrl: "https://farcaster-lucky-number.vercel.app/og-image.png",
-      button: {
-        title: "🍀 Get My Lucky Number",
-        action: {
-          type: "launch_miniapp",
-          name: "Lucky Numbers",
-          url: "https://farcaster-lucky-number.vercel.app",
-          splashImageUrl: "https://farcaster-lucky-number.vercel.app/splash.png",
-          splashBackgroundColor: "#6200EA"
-        }
-      }
-    }),
-  },
-}
 
 interface User {
   fid: number
   username?: string
   displayName?: string
   pfpUrl?: string
+}
+
+interface MiniAppContext {
+  user?: User
+  client?: {
+    clientFid?: number
+  }
 }
 
 type SDKType = 'farcaster' | 'coinbase' | 'demo'
@@ -59,13 +31,13 @@ function LuckyNumberAppContent() {
   const [debugLog, setDebugLog] = useState<string[]>([])
 
   // Add debug logging that's visible on screen
-  const addDebugLog = (message: string) => {
+  const addDebugLog = useCallback((message: string) => {
     console.log(message)
     setDebugLog(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()}: ${message}`])
-  }
+  }, [])
 
   // Generate lucky number based on FID and current date
-  const generateLuckyNumber = (fid: number): number => {
+  const generateLuckyNumber = useCallback((fid: number): number => {
     const today = new Date()
     const year = today.getFullYear()
     const month = today.getMonth() + 1
@@ -77,7 +49,7 @@ function LuckyNumberAppContent() {
     
     // Generate number between 1-100
     return ((seed * 9301 + 49297) % 233280) % 100 + 1
-  }
+  }, [])
 
   const handleGenerateNumber = async () => {
     if (!user) return
@@ -115,26 +87,26 @@ function LuckyNumberAppContent() {
     }
   }
 
-  const initializeFarcaster = async () => {
+  const initializeFarcaster = useCallback(async () => {
     try {
       addDebugLog('Trying Farcaster SDK...')
       const { sdk } = await import('@farcaster/miniapp-sdk')
       
       // Wait for context with timeout
-      let context
+      let context: MiniAppContext | null = null
       try {
         context = await Promise.race([
           sdk.context,
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Context timeout')), 3000)
           )
-        ])
-      } catch (timeoutError) {
+        ]) as MiniAppContext
+      } catch {
         addDebugLog('Context resolution timed out, trying direct access')
-        context = await sdk.context
+        context = await sdk.context as MiniAppContext
       }
       
-      addDebugLog(`Context received: ${JSON.stringify(context?.user ? 'User found' : 'No user')}`)
+      addDebugLog(`Context received: ${context?.user ? 'User found' : 'No user'}`)
       addDebugLog(`Client FID: ${context?.client?.clientFid || 'unknown'}`)
       
       // Check if this is Coinbase Wallet
@@ -143,7 +115,7 @@ function LuckyNumberAppContent() {
         return false // Let Coinbase Wallet handler take over
       }
       
-      if (context && context.user && context.user.fid) {
+      if (context?.user?.fid) {
         addDebugLog(`Farcaster user FID: ${context.user.fid}`)
         setUser(context.user)
         setLuckyNumber(generateLuckyNumber(context.user.fid))
@@ -158,16 +130,16 @@ function LuckyNumberAppContent() {
       addDebugLog(`Farcaster SDK error: ${error}`)
       return false
     }
-  }
+  }, [addDebugLog, generateLuckyNumber])
 
   // Enhanced Coinbase Wallet initialization
-  const initializeCoinbaseWallet = async () => {
+  const initializeCoinbaseWallet = useCallback(async () => {
     try {
       addDebugLog('Trying Coinbase Wallet detection...')
       
       if (typeof window !== 'undefined') {
         const { sdk } = await import('@farcaster/miniapp-sdk')
-        const context = await sdk.context
+        const context = await sdk.context as MiniAppContext
         
         addDebugLog(`Client FID: ${context?.client?.clientFid || 'unknown'}`)
         
@@ -176,7 +148,7 @@ function LuckyNumberAppContent() {
           addDebugLog('Coinbase Wallet detected via clientFid 309857')
           
           // Use context data for authentication (recommended by Coinbase Wallet)
-          if (context.user && context.user.fid) {
+          if (context?.user?.fid) {
             addDebugLog(`Coinbase Wallet user FID: ${context.user.fid}`)
             setUser(context.user)
             setLuckyNumber(generateLuckyNumber(context.user.fid))
@@ -232,7 +204,7 @@ function LuckyNumberAppContent() {
       addDebugLog(`Coinbase Wallet error: ${error}`)
       return false
     }
-  }
+  }, [addDebugLog, generateLuckyNumber])
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -274,7 +246,7 @@ function LuckyNumberAppContent() {
     }
 
     initializeApp()
-  }, [])
+  }, [initializeFarcaster, initializeCoinbaseWallet, addDebugLog, generateLuckyNumber])
 
   if (isLoading) {
     return (
@@ -336,9 +308,11 @@ function LuckyNumberAppContent() {
           <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 mb-6">
             <div className="flex items-center gap-3 mb-4">
               {user.pfpUrl && (
-                <img 
+                <Image 
                   src={user.pfpUrl} 
                   alt="Profile" 
+                  width={48}
+                  height={48}
                   className="w-12 h-12 rounded-full"
                 />
               )}
