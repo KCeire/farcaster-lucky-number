@@ -3,6 +3,36 @@
 import { useEffect, useState } from 'react'
 import { Sparkles, RefreshCw, Share2 } from 'lucide-react'
 import MiniKitWrapper from './MiniKitWrapper'
+import { Metadata } from 'next'
+
+// Add this metadata export for Farcaster Frame support
+export const metadata: Metadata = {
+  title: '🍀 Lucky Numbers - Your Daily Fortune',
+  description: 'Generate your daily lucky number and share it with friends!',
+  openGraph: {
+    title: '🍀 Lucky Numbers - Your Daily Fortune',
+    description: 'Generate your daily lucky number and share it with friends!',
+    images: [
+      {
+        url: '/og-image.png', // Make sure you have this image in your public folder
+        width: 1200,
+        height: 630,
+        alt: 'Lucky Numbers App',
+      },
+    ],
+  },
+  other: {
+    // Farcaster Frame metadata - this is the key part you were missing!
+    'fc:frame': 'vNext',
+    'fc:frame:image': process.env.NEXT_PUBLIC_URL 
+      ? `${process.env.NEXT_PUBLIC_URL}/og-image.png`
+      : 'https://your-domain.com/og-image.png', // Replace with your actual domain
+    'fc:frame:button:1': '🍀 Get My Lucky Number',
+    'fc:frame:button:1:action': 'link',
+    'fc:frame:button:1:target': process.env.NEXT_PUBLIC_URL || 'https://your-domain.com', // Replace with your actual domain
+    'fc:frame:image:aspect_ratio': '1.91:1',
+  },
+}
 
 interface User {
   fid: number
@@ -344,4 +374,4 @@ export default function LuckyNumberApp() {
       <LuckyNumberAppContent />
     </MiniKitWrapper>
   )
-} 
+}
