@@ -109,12 +109,6 @@ function LuckyNumberAppContent() {
       addDebugLog(`Context received: ${context?.user ? 'User found' : 'No user'}`)
       addDebugLog(`Client FID: ${context?.client?.clientFid || 'unknown'}`)
       
-      // Check if this is Coinbase Wallet
-      if (context?.client?.clientFid === 309857) {
-        addDebugLog('Coinbase Wallet detected - redirecting to Coinbase initialization')
-        return false // Let Coinbase Wallet handler take over
-      }
-      
       if (context?.user?.fid) {
         addDebugLog(`Farcaster user FID: ${context.user.fid}`)
         setUser(context.user)
@@ -211,18 +205,18 @@ function LuckyNumberAppContent() {
       try {
         addDebugLog('Starting app initialization...')
         
-        // Try Farcaster first (but it will redirect to Coinbase if detected)
-        const farcasterSuccess = await initializeFarcaster()
-        if (farcasterSuccess) {
-          addDebugLog('Farcaster initialization successful')
+        // Try Coinbase Wallet first (prioritized)
+        const coinbaseSuccess = await initializeCoinbaseWallet()
+        if (coinbaseSuccess) {
+          addDebugLog('Coinbase Wallet initialization successful')
           setIsLoading(false)
           return
         }
 
-        // Try Coinbase Wallet detection
-        const coinbaseSuccess = await initializeCoinbaseWallet()
-        if (coinbaseSuccess) {
-          addDebugLog('Coinbase Wallet initialization successful')
+        // Try Farcaster as fallback
+        const farcasterSuccess = await initializeFarcaster()
+        if (farcasterSuccess) {
+          addDebugLog('Farcaster initialization successful')
           setIsLoading(false)
           return
         }
