@@ -1,13 +1,20 @@
 {
-  "miniapp": {
+  "frame": {
+    "name": "Lucky Number App",
     "version": "1",
-    "name": "Lucky Numbers",
     "iconUrl": "https://farcaster-lucky-number.vercel.app/icon.png",
     "homeUrl": "https://farcaster-lucky-number.vercel.app",
-    "imageUrl": "https://farcaster-lucky-number.vercel.app/og-image.png",
-    "buttonTitle": "🍀 Get My Lucky Number",
+    "imageUrl": "https://farcaster-lucky-number.vercel.app/image.png",
     "splashImageUrl": "https://farcaster-lucky-number.vercel.app/splash.png",
-    "splashBackgroundColor": "#8B5CF6",
-    "description": "Get your daily lucky number based on your Farcaster ID!"
+    "splashBackgroundColor": "#6200EA",
+    "webhookUrl": "https://farcaster-lucky-number.vercel.app/api/webhook",
+    "subtitle": "Fun lucky number gen",
+    "description": "Testing how easy it is to make a mini app",
+    "primaryCategory": "games"
+  },
+  "accountAssociation": {
+    "header": "eyJmaWQiOjgyNTgzNiwidHlwZSI6ImF1dGgiLCJrZXkiOiIweEUzRTY0QTk1QUYyOTgyNzEyNUQ0M2Y0MDkxQTNiMWU3NjYxMWFGOUEifQ",
+    "payload": "eyJkb21haW4iOiJmYXJjYXN0ZXItbHVja3ktbnVtYmVyLnZlcmNlbC5hcHAifQ",
+    "signature": "vRtolVF8HqMDoG2xY275elyUUj4GY0GMZmvxdmDbIzVn3Rcl6h0VgcL5XFcNSzOgirKHrOzoJC+y3rtkq2zmdBs="
   }
 }
