@@ -30,7 +30,6 @@ export const metadata: Metadata = {
         action: {
           type: "launch_frame",
           name: "Lucky Numbers",
-          url: "https://farcaster-lucky-number.vercel.app",
           splashImageUrl: "https://farcaster-lucky-number.vercel.app/splash.png",
           splashBackgroundColor: "#6200EA"
         }
@@ -45,7 +44,6 @@ export const metadata: Metadata = {
         action: {
           type: "launch_frame",
           name: "Lucky Numbers",
-          url: "https://farcaster-lucky-number.vercel.app",
           splashImageUrl: "https://farcaster-lucky-number.vercel.app/splash.png",
           splashBackgroundColor: "#6200EA"
         }
@@ -67,4 +65,4 @@ export default function RootLayout({
       <body className={inter.className}>{children}</body>
     </html>
   )
-}
+} 
