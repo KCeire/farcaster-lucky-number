@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Sparkles, RefreshCw, Share2 } from 'lucide-react'
+import MiniKitWrapper from './MiniKitWrapper'
 
 interface User {
   fid: number
@@ -10,12 +11,15 @@ interface User {
   pfpUrl?: string
 }
 
-export default function LuckyNumberApp() {
+type SDKType = 'farcaster' | 'minikit' | 'demo'
+
+function LuckyNumberAppContent() {
   const [user, setUser] = useState<User | null>(null)
   const [luckyNumber, setLuckyNumber] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sdkType, setSdkType] = useState<SDKType>('demo')
 
   // Generate lucky number based on FID and current date
   const generateLuckyNumber = (fid: number): number => {
@@ -48,50 +52,112 @@ export default function LuckyNumberApp() {
     if (!luckyNumber || !user) return
 
     try {
-      // Dynamic import to handle cases where SDK might not be available
-      const { sdk } = await import('@farcaster/miniapp-sdk')
-      await sdk.actions.composeCast({
-        text: `🍀 My lucky number today is ${luckyNumber}! What's yours?`,
-        embeds: [window.location.href]
-      })
+      if (sdkType === 'farcaster') {
+        // Use Farcaster SDK
+        const { sdk } = await import('@farcaster/miniapp-sdk')
+        await sdk.actions.composeCast({
+          text: `🍀 My lucky number today is ${luckyNumber}! What's yours?`,
+          embeds: [window.location.href]
+        })
+      } else if (sdkType === 'minikit') {
+        // Use MiniKit functionality
+        console.log('MiniKit sharing - to be implemented with OnchainKit')
+        setError('MiniKit sharing coming soon!')
+      } else {
+        setError('Sharing is only available in Farcaster or Coinbase Wallet')
+      }
     } catch (error) {
       console.error('Error sharing:', error)
-      setError('Sharing is only available in Farcaster clients')
+      setError('Error sharing your lucky number')
+    }
+  }
+
+  const initializeFarcaster = async () => {
+    try {
+      const { sdk } = await import('@farcaster/miniapp-sdk')
+      
+      // Wait for context to be available
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      const context = await sdk.context
+      if (context && context.user && context.user.fid) {
+        setUser(context.user)
+        setLuckyNumber(generateLuckyNumber(context.user.fid))
+        setSdkType('farcaster')
+        await sdk.actions.ready()
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Farcaster SDK error:', error)
+      return false
+    }
+  }
+
+  const initializeMiniKit = async () => {
+    try {
+      // Check if we're in a MiniKit environment
+      // This would need to be implemented based on OnchainKit's detection methods
+      if (typeof window !== 'undefined') {
+        // Check for MiniKit-specific indicators
+        const userAgent = navigator.userAgent
+        const isCoinbaseWallet = userAgent.includes('CoinbaseWallet') || 
+                                userAgent.includes('Coinbase') ||
+                                'coinbaseWalletExtension' in window
+
+        if (isCoinbaseWallet) {
+          console.log('Coinbase Wallet environment detected')
+          
+          // Create a mock user for MiniKit environment
+          // In a real implementation, you'd get user data from MiniKit
+          const mockUser = { 
+            fid: Math.floor(Math.random() * 10000), 
+            username: 'coinbase-user', 
+            displayName: 'Coinbase Wallet User' 
+          }
+          setUser(mockUser)
+          setLuckyNumber(generateLuckyNumber(mockUser.fid))
+          setSdkType('minikit')
+          return true
+        }
+      }
+      return false
+    } catch (error) {
+      console.error('MiniKit detection error:', error)
+      return false
     }
   }
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Dynamic import to handle cases where SDK might not be available
-        const { sdk } = await import('@farcaster/miniapp-sdk')
-        
-        // Wait for context to be available
-        await new Promise(resolve => setTimeout(resolve, 100))
-        
-        // Get user context from Farcaster
-        const context = await sdk.context
-        if (context && context.user && context.user.fid) {
-          setUser(context.user)
-          // Generate initial lucky number
-          const number = generateLuckyNumber(context.user.fid)
-          setLuckyNumber(number)
-        } else {
-          // Fallback for testing outside Farcaster
-          const mockUser = { fid: 123, username: 'demo', displayName: 'Demo User' }
-          setUser(mockUser)
-          setLuckyNumber(generateLuckyNumber(mockUser.fid))
+        // Try Farcaster first
+        const farcasterSuccess = await initializeFarcaster()
+        if (farcasterSuccess) {
+          setIsLoading(false)
+          return
         }
-        
-        // Signal that the app is ready (hide splash screen)
-        await sdk.actions.ready()
-        setIsLoading(false)
-      } catch (error) {
-        console.error('Error initializing app:', error)
-        // Fallback for regular browser testing
+
+        // Try MiniKit detection
+        const minikitSuccess = await initializeMiniKit()
+        if (minikitSuccess) {
+          setIsLoading(false)
+          return
+        }
+
+        // Fall back to demo user
         const mockUser = { fid: 123, username: 'demo', displayName: 'Demo User' }
         setUser(mockUser)
         setLuckyNumber(generateLuckyNumber(mockUser.fid))
+        setSdkType('demo')
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Error initializing app:', error)
+        // Ultimate fallback
+        const mockUser = { fid: 123, username: 'demo', displayName: 'Demo User' }
+        setUser(mockUser)
+        setLuckyNumber(generateLuckyNumber(mockUser.fid))
+        setSdkType('demo')
         setIsLoading(false)
       }
     }
@@ -117,12 +183,22 @@ export default function LuckyNumberApp() {
           </div>
           <h1 className="text-3xl font-bold mb-2">🍀 Lucky Numbers</h1>
           <p className="text-purple-100">Your daily dose of fortune!</p>
+          {/* Debug info */}
+          <p className="text-purple-200 text-xs mt-2">
+            Running via: {sdkType === 'farcaster' ? 'Farcaster' : sdkType === 'minikit' ? 'Coinbase Wallet' : 'Demo'}
+          </p>
         </div>
 
         {/* Error Display */}
         {error && (
           <div className="bg-red-500/20 border border-red-500 rounded-xl p-4 mb-6">
             <p className="text-red-100 text-sm">{error}</p>
+            <button 
+              onClick={() => setError(null)}
+              className="text-red-200 text-xs mt-2 underline"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 
@@ -196,9 +272,17 @@ export default function LuckyNumberApp() {
 
         {/* Footer */}
         <div className="text-center mt-8 text-purple-100 text-sm">
-          <p>Numbers change daily • Built with Farcaster Mini Apps</p>
+          <p>Numbers change daily • Built with Farcaster + OnchainKit</p>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LuckyNumberApp() {
+  return (
+    <MiniKitWrapper>
+      <LuckyNumberAppContent />
+    </MiniKitWrapper>
   )
 } 
