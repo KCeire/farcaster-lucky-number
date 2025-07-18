@@ -22,14 +22,21 @@ export const metadata: Metadata = {
     ],
   },
   other: {
-    'fc:frame': 'vNext',
-    'fc:frame:image': process.env.NEXT_PUBLIC_URL 
-      ? `${process.env.NEXT_PUBLIC_URL}/og-image.png`
-      : 'https://farcaster-lucky-number.vercel.app/og-image.png', 
-    'fc:frame:button:1': '🍀 Get My Lucky Number',
-    'fc:frame:button:1:action': 'link',
-    'fc:frame:button:1:target': process.env.NEXT_PUBLIC_URL || 'https://farcaster-lucky-number.vercel.app/', 
-    'fc:frame:image:aspect_ratio': '1.91:1',
+    // Farcaster Frame metadata - this creates the embed
+    'fc:frame': JSON.stringify({
+      version: "1",
+      imageUrl: "https://farcaster-lucky-number.vercel.app/og-image.png",
+      button: {
+        title: "🍀 Get My Lucky Number",
+        action: {
+          type: "launch_miniapp",
+          name: "Lucky Numbers",
+          url: "https://farcaster-lucky-number.vercel.app",
+          splashImageUrl: "https://farcaster-lucky-number.vercel.app/splash.png",
+          splashBackgroundColor: "#6200EA"
+        }
+      }
+    }),
   },
 }
 
@@ -113,10 +120,20 @@ function LuckyNumberAppContent() {
       addDebugLog('Trying Farcaster SDK...')
       const { sdk } = await import('@farcaster/miniapp-sdk')
       
-      // Wait for context to be available
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Wait for context with timeout
+      let context
+      try {
+        context = await Promise.race([
+          sdk.context,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Context timeout')), 3000)
+          )
+        ])
+      } catch (timeoutError) {
+        addDebugLog('Context resolution timed out, trying direct access')
+        context = await sdk.context
+      }
       
-      const context = await sdk.context
       addDebugLog(`Context received: ${JSON.stringify(context?.user ? 'User found' : 'No user')}`)
       addDebugLog(`Client FID: ${context?.client?.clientFid || 'unknown'}`)
       
@@ -135,7 +152,7 @@ function LuckyNumberAppContent() {
         addDebugLog('Farcaster SDK ready() called')
         return true
       }
-      addDebugLog('No Farcaster user found')
+      addDebugLog('No Farcaster user found in context')
       return false
     } catch (error) {
       addDebugLog(`Farcaster SDK error: ${error}`)
