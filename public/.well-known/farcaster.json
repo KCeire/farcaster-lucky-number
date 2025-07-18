@@ -4,7 +4,7 @@
     "version": "1",
     "iconUrl": "https://farcaster-lucky-number.vercel.app/icon.png",
     "homeUrl": "https://farcaster-lucky-number.vercel.app",
-    "imageUrl": "https://via.placeholder.com/600x400/8B5CF6/FFFFFF?text=🍀+Lucky+Numbers",
+    "imageUrl": "https://farcaster-lucky-number.vercel.app/embed-image.png",
     "splashImageUrl": "https://farcaster-lucky-number.vercel.app/splash.png",
     "splashBackgroundColor": "#6200EA",
     "webhookUrl": "https://farcaster-lucky-number.vercel.app/api/webhook",
