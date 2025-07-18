@@ -1,6 +1,6 @@
 {
   "frame": {
-    "name": "Lucky Number App",
+    "name": "Lucky Numbers",
     "version": "1",
     "iconUrl": "https://farcaster-lucky-number.vercel.app/icon.png",
     "homeUrl": "https://farcaster-lucky-number.vercel.app",
@@ -8,9 +8,25 @@
     "splashImageUrl": "https://farcaster-lucky-number.vercel.app/splash.png",
     "splashBackgroundColor": "#6200EA",
     "webhookUrl": "https://farcaster-lucky-number.vercel.app/api/webhook",
-    "subtitle": "Fun lucky number gen",
-    "description": "Testing how easy it is to make a mini app",
+    "subtitle": "Your daily fortune generator",
+    "description": "Get your unique daily lucky number based on your Farcaster ID. Share your fortune with friends and discover what luck has in store for you today!",
     "primaryCategory": "games",
+    "tags": [
+      "fortune",
+      "numbers",
+      "daily",
+      "luck",
+      "social"
+    ],
+    "screenshotUrls": [
+      "https://farcaster-lucky-number.vercel.app/screenshot1.png",
+      "https://farcaster-lucky-number.vercel.app/screenshot2.png"
+    ],
+    "heroImageUrl": "https://farcaster-lucky-number.vercel.app/hero.png",
+    "tagline": "Discover your daily fortune",
+    "ogTitle": "Lucky Numbers - Daily Fortune",
+    "ogDescription": "Get your unique daily lucky number based on your Farcaster ID. Share your fortune with friends!",
+    "ogImageUrl": "https://farcaster-lucky-number.vercel.app/og-image.png",
     "requiredCapabilities": [
       "actions.ready",
       "actions.composeCast"
@@ -24,4 +40,4 @@
     "payload": "eyJkb21haW4iOiJmYXJjYXN0ZXItbHVja3ktbnVtYmVyLnZlcmNlbC5hcHAifQ",
     "signature": "vRtolVF8HqMDoG2xY275elyUUj4GY0GMZmvxdmDbIzVn3Rcl6h0VgcL5XFcNSzOgirKHrOzoJC+y3rtkq2zmdBs="
   }
-}
+} 
